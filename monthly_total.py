@@ -14,7 +14,7 @@ class Monthly_Total:
         self.num_sessions = num_sessions
 
     def generate_doc_key(self):
-        return f"{self.year}-{self.month}"
+        return str(self.year) + str(self.month)
 
     def to_dict(self):
         return {
