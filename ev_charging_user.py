@@ -18,9 +18,9 @@ class Ev_Charging_User:
     def from_dict(source):
         return Ev_Charging_User(
             user_id=source["user_id"],
-            name=source["name"],
+            name=source.get("name", None),
             created=source["created"],
-            unit=source["unit"]
+            unit=source.get("unit", None)
         )
 
     def to_dict(self):
