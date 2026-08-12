@@ -21,4 +21,10 @@ mydatestring = "2026-02-15T12:00:00"
 mydate = dateutil.parser.parse(mydatestring)
 
 mylocaldate2 = mydate.astimezone(dateutil.tz.gettz(mytimezone))
-print(mylocaldate2.isoformat())  # Output: 2026-02-15T12:00:00-05:00    
+print(mylocaldate2.isoformat())  # Output: 2026-02-15T12:00:00-05:00
+
+## Adding timezone to a NOW datetime
+
+nowdt = datetime.now()
+nowdt = nowdt.astimezone(dateutil.tz.gettz(mytimezone))
+print(nowdt.isoformat()) 

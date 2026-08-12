@@ -4,15 +4,15 @@ def isValidEvent(self, event: dict) -> bool:
 
     valid = True
     
-    if event.get("userId", "null") == "null":
+    if event.get("userId", "null") == "null" or event.get("userId", "null") is None:
 
         valid = False
     
-    elif event.get("startTimestamp", "null") == "null":
+    elif event.get("startTimestamp", "null") == "null" or event.get("startTimestamp", "null") is None:
 
         valid = False
     
-    elif event.get("stopTimestamp", "null") == "null":
+    elif event.get("stopTimestamp", "null") == "null" or event.get("stopTimestamp", "null") is None:
 
         valid = False
 
