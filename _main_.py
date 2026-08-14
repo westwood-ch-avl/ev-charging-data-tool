@@ -38,7 +38,7 @@ def build_event_list_from_powerfill_list(data) -> list:
     for e in data:
 
         if isValidEvent(e):
-            events.append(Event(e["startValue"], e["stopValue"], e["userId"], e["chargeBoxId"]))
+            events.append(Event(e["startTimeStamp"], e["stopTimeStamp"], e["userId"], e["chargeBoxId"])) #TODO there should be more data here. See my note on event.py
 
     return events
 
@@ -58,6 +58,8 @@ def get_ev_users_from_db() -> dict:
     return ev_users
 
 def post_events_to_db(events: list): #TODO the following is auto generated. Prolly need to fix it. Do these need to be batched? DO I want to store events under each user?
+
+# TODO see this for batching: https://docs.cloud.google.com/python/docs/reference/firestore/latest/google.cloud.firestore_v1.bulk_writer.BulkWriter
 
     import firebase_admin
     from firebase_admin import firestore
