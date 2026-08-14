@@ -56,7 +56,9 @@ def get_ev_users_from_db() -> dict:
 
     return ev_users
 
-def post_events_to_db(events: list, earliest_date_time:datetime=None): #TODO the following is auto generated. Prolly need to fix it. Do these need to be batched? DO I want to store events under each user?
+def post_events_to_db(events: list, local_ev_user_dict, earliest_date_time:datetime=None): #TODO the following is auto generated. Prolly need to fix it. Do these need to be batched?
+# TODO DO I want to store events under each user? I think so.
+# TODO need to check against the `local_ev_user_dict` and make a new user in the database if one is missing. At the same time, that needs to be loaded in the local dict so I'm not doing the same thing over and over!
 # TODO see this for batching: https://docs.cloud.google.com/python/docs/reference/firestore/latest/google.cloud.firestore_v1.bulk_writer.BulkWriter
 
     from firebase_admin import firestore
@@ -72,6 +74,19 @@ def post_events_to_db(events: list, earliest_date_time:datetime=None): #TODO the
         
         doc_ref = db.collection("events").document(event.id)
         doc_ref.set(event.to_dict())
+
+'''create a data list of events from a local json file—path defined in the env variables. NB after running this, the list will still need to be converted to event objects.'''
+def get_data_from_local_json() -> list:
+
+    path = os.environ.get("LOCAL_JSON_DATA")
+
+    data = []
+
+    with open(path, 'r') as f:
+
+        data = json.load(f)
+
+    return data
 
 def do_monthly_totals():
 

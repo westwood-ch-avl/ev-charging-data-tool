@@ -1,5 +1,6 @@
 from datetime import datetime
 import dateutil
+import os
 
 class Event:
 
@@ -14,16 +15,15 @@ class Event:
     def __init__(self, id, start_time, end_time, start_wh, end_wh, user_id, charge_box_id):
 
         if isinstance(start_time, str):
-            self.start_time = dateutil.parser.parse(start_time).astimezone(dateutil.tz.gettz("America/New_York"))
+            self.start_time = dateutil.parser.parse(start_time).astimezone(dateutil.tz.gettz(os.environ.get("TZ")))
         else:
             self.start_time = start_time
 
         if isinstance(end_time, str):
-            self.end_time = dateutil.parser.parse(end_time).astimezone(dateutil.tz.gettz("America/New_York"))
+            self.end_time = dateutil.parser.parse(end_time).astimezone(dateutil.tz.gettz(os.environ.get("TZ")))
         else:
             self.end_time = end_time
         
-        self.end_time = dateutil.parser.parse(end_time)
         self.user_id = user_id
         self.charge_box_id = charge_box_id
         self.start_wh = start_wh
