@@ -12,7 +12,17 @@ class Event:
     charge_box_id: str
 
     def __init__(self, id, start_time, end_time, start_wh, end_wh, user_id, charge_box_id):
-        self.start_time = dateutil.parser.parse(start_time)
+
+        if isinstance(start_time, str):
+            self.start_time = dateutil.parser.parse(start_time).astimezone(dateutil.tz.gettz("America/New_York"))
+        else:
+            self.start_time = start_time
+
+        if isinstance(end_time, str):
+            self.end_time = dateutil.parser.parse(end_time).astimezone(dateutil.tz.gettz("America/New_York"))
+        else:
+            self.end_time = end_time
+        
         self.end_time = dateutil.parser.parse(end_time)
         self.user_id = user_id
         self.charge_box_id = charge_box_id

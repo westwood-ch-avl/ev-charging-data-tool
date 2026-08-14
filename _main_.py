@@ -5,13 +5,13 @@ import requests
 from event import Event
 from ev_charging_user import Ev_Charging_User
 from event_error_checker import isValidEvent
-
-from event_error_checker import isValidEvent
+from datetime import datetime
+import firebase_admin
 
 load_dotenv()
 
 def initialize_firebase_service_account():
-    import firebase_admin
+
     from firebase_admin import credentials
 
     key_dict = json.loads(os.environ.get("FIREBASE_DICT"))
@@ -44,7 +44,6 @@ def build_event_list_from_powerfill_list(data) -> list:
 
 def get_ev_users_from_db() -> dict:
 
-    import firebase_admin
     from firebase_admin import firestore
 
     ev_users = {}
@@ -57,17 +56,21 @@ def get_ev_users_from_db() -> dict:
 
     return ev_users
 
-def post_events_to_db(events: list): #TODO the following is auto generated. Prolly need to fix it. Do these need to be batched? DO I want to store events under each user?
-
+def post_events_to_db(events: list, earliest_date_time:datetime=None): #TODO the following is auto generated. Prolly need to fix it. Do these need to be batched? DO I want to store events under each user?
 # TODO see this for batching: https://docs.cloud.google.com/python/docs/reference/firestore/latest/google.cloud.firestore_v1.bulk_writer.BulkWriter
 
-    import firebase_admin
     from firebase_admin import firestore
 
     db = firestore.client()
 
     for event in events:
-        doc_ref = db.collection("events").document(event.generate_doc_key())
+
+        if earliest_date_time:
+
+            if event.start_time < earliest_date_time:
+                break
+        
+        doc_ref = db.collection("events").document(event.id)
         doc_ref.set(event.to_dict())
 
 def do_monthly_totals():
