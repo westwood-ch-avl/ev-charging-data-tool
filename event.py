@@ -1,38 +1,44 @@
 from datetime import datetime
 import dateutil
 
-#TODO -- I am missing fields here. Need to have start and end values and start and end timestamps.
-#TODO -- I thought that the powerfill data doesn't have "id" values. But it does. I should use that for the keys here.
-
 class Event:
 
-    start: datetime
-    end: datetime
+    id: str
+    start_time: datetime
+    end_time: datetime
+    start_wh: int
+    end_wh: int
     user_id: int
     charge_box_id: str
 
-    def __init__(self, start, end, user_id, charge_box_id):
-        self.start = dateutil.parser.parse(start)
-        self.end = dateutil.parser.parse(end)
+    def __init__(self, id, start_time, end_time, start_wh, end_wh, user_id, charge_box_id):
+        self.start_time = dateutil.parser.parse(start_time)
+        self.end_time = dateutil.parser.parse(end_time)
         self.user_id = user_id
         self.charge_box_id = charge_box_id
+        self.start_wh = start_wh
+        self.end_wh = end_wh
+        self.id = id
 
     @staticmethod
     def from_dict(source):
         return Event(
-            start=source["start"],
-            end=source["end"],
+            start_time=source["start_time"],
+            end_time=source["end_time"],
             user_id=source["user_id"],
-            charge_box_id=source["charge_box_id"]
+            charge_box_id=source["charge_box_id"],
+            end_wh = source["end_wh"],
+            start_wh = source["start_wh"],
+            id = source["id"]
         )
 
     def to_dict(self):
         return {
-            "start": self.start,
-            "end": self.end,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
             "user_id": self.user_id,
-            "charge_box_id": self.charge_box_id
+            "charge_box_id": self.charge_box_id,
+            "start_wh": self.start_wh,
+            "end_wh": self.end_wh,
+            "id": self.id
         }
-
-    def generate_doc_key(self):
-        return f"{self.start.isoformat()}-{self.user_id}"

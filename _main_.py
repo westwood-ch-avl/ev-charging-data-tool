@@ -38,7 +38,7 @@ def build_event_list_from_powerfill_list(data) -> list:
     for e in data:
 
         if isValidEvent(e):
-            events.append(Event(e["startTimeStamp"], e["stopTimeStamp"], e["userId"], e["chargeBoxId"])) #TODO there should be more data here. See my note on event.py
+            events.append(Event(e["id"], e["startTimeStamp"], e["stopTimeStamp"], e["startValue"],e["stopValue"], e["userId"], e["chargeBoxId"]))
 
     return events
 
