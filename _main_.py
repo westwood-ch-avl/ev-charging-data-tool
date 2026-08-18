@@ -141,6 +141,8 @@ def do_monthly_total(db, ev_users: dict, specific_date_to_run:date=None):
 
     docs = query.stream()
 
+    ## process the events and make the new reports locally
+
     the_months_events = []
 
     for doc in docs:
@@ -161,7 +163,23 @@ def do_monthly_total(db, ev_users: dict, specific_date_to_run:date=None):
 
             ev_users[str(e.user_id)].new_monthly_report.num_sessions +=1
 
-    ...#TODO post the new monthly totals. 
+    ## post the new monthly totals.
+
+    bulk_writer = db.bulk_writer()
+
+    bulk_writer.on_write_result(lambda reference, result, bulk_writer: print(f'Saved {reference._document_path}'))
+
+    bulk_writer.on_write_error(lambda bulkwriterfailure, bulk_writer: print(f'Bulk Write Failure: {bulkwriterfailure.message}'))
+
+    for u in ev_users.values():
+
+        new_report_id = u.new_monthly_report.generate_doc_key()
+
+        ref = db.collection("ev_users").document(str(u.user_id)).collection("monthly_totals").document(new_report_id)
+
+        bulk_writer.set(ref, u.new_monthly_report.to_dict())
+
+    bulk_writer.close()
 
 def get_command_line_params() -> dict:
 
