@@ -11,8 +11,6 @@ from dateutil.relativedelta import relativedelta
 import firebase_admin
 import sys
 
-load_dotenv()
-
 def initialize_firebase_service_account():
 
     from firebase_admin import credentials
@@ -61,6 +59,9 @@ def get_ev_users_from_db() -> dict:
 
 def post_events_to_db(ev_users: dict, events: list, earliest_date_time:datetime=None):
 
+    if isinstance(earliest_date_time, str):
+        earliest_date_time = dateutil.parser.parse(earliest_date_time).astimezone(dateutil.tz.gettz(os.environ.get("TZ")))
+
     from firebase_admin import firestore
 
     db = firestore.Client()
@@ -70,7 +71,7 @@ def post_events_to_db(ev_users: dict, events: list, earliest_date_time:datetime=
 
     bulk_writer.on_write_error(lambda bulkwriterfailure, bulk_writer: print(f'Bulk Write Failure: {bulkwriterfailure.message}'))
 
-    for event in events:
+    for event in events.values():
 
         if earliest_date_time:
 
@@ -119,6 +120,10 @@ def do_monthly_total(ev_users: dict, specific_date_to_run:date=None):
 
     ## Figure out the exact start and end of the desired month
 
+    if isinstance(specific_date_to_run, str):
+
+        specific_date_to_run = dateutil.parser.parse(specific_date_to_run).date()
+
     if specific_date_to_run == None:
 
         specific_date_to_run = date.today() + relativedelta(days=-3)
@@ -161,4 +166,12 @@ def get_command_line_params() -> dict:
 
 if __name__ == "__main__":
 
-    ...
+    load_dotenv()
+
+    initialize_firebase_service_account()
+
+    ev_users = get_ev_users_from_db()
+
+    events = get_events_from_local_json()
+
+    post_events_to_db(ev_users, events, "2025-11-30")
