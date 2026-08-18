@@ -1,6 +1,6 @@
 from pprint import pprint
 
-def isValidEvent(self, event: dict) -> bool:
+def isValidEvent(event: dict) -> bool:
 
     valid = True
     

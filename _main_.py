@@ -9,16 +9,19 @@ from datetime import datetime, date, time
 import dateutil
 from dateutil.relativedelta import relativedelta
 import firebase_admin
+from firebase_admin import credentials, firestore
 import sys
 
-def initialize_firebase_service_account():
-
-    from firebase_admin import credentials
+def initialize_firebase_service_account() -> firestore.client:
 
     key_dict = json.loads(os.environ.get("FIREBASE_DICT"))
 
     cred = credentials.Certificate(key_dict)
     firebase_admin.initialize_app(cred)
+
+    db = firestore.client()
+
+    return db
 
 ##TODO edit this auto-generated code as needed. Need to add params too. Also consider baking in a way to use command line to set how far back to pull events.
 def get_powerfill_data() -> list:
@@ -43,28 +46,24 @@ def build_event_dict_from_powerfill_list(data) -> dict:
 
     return events
 
-def get_ev_users_from_db() -> dict:
-
-    from firebase_admin import firestore
+def get_ev_users_from_db(db) -> dict:
 
     ev_users = {}
 
-    db = firestore.client()
     docs = db.collection("ev-charging-users").stream()
 
     for doc in docs:
         ev_users[doc.id] = Ev_Charging_User.from_dict(doc.to_dict())
 
+        print("Found EV User: " + doc.id)
+
     return ev_users
 
-def post_events_to_db(ev_users: dict, events: list, earliest_date_time:datetime=None):
+def post_events_to_db(db, ev_users: dict, events: list, earliest_date_time:datetime=None):
 
     if isinstance(earliest_date_time, str):
         earliest_date_time = dateutil.parser.parse(earliest_date_time).astimezone(dateutil.tz.gettz(os.environ.get("TZ")))
 
-    from firebase_admin import firestore
-
-    db = firestore.Client()
     bulk_writer = db.bulk_writer()
 
     bulk_writer.on_write_result(lambda reference, result, bulk_writer: print(f'Saved {reference._document_path}'))
@@ -78,7 +77,7 @@ def post_events_to_db(ev_users: dict, events: list, earliest_date_time:datetime=
             if event.start_time < earliest_date_time:
                 break
 
-        if event.user_id in ev_users:
+        if str(event.user_id) in ev_users:
 
             continue
 
@@ -116,7 +115,7 @@ def get_events_from_local_json() -> dict:
 
     return events
 
-def do_monthly_total(ev_users: dict, specific_date_to_run:date=None):
+def do_monthly_total(db, ev_users: dict, specific_date_to_run:date=None):
 
     ## Figure out the exact start and end of the desired month
 
@@ -135,10 +134,7 @@ def do_monthly_total(ev_users: dict, specific_date_to_run:date=None):
 
     ## Get the relevant events
     
-    from firebase_admin import firestore
     from google.cloud.firestore_v1.base_query import FieldFilter
-    
-    db = firestore.client()
 
     query = db.collection_group("events").where(filter=FieldFilter("start_time", ">", start_of_month)).where(filter=FieldFilter("start_time", "<", end_of_month))
 
@@ -168,10 +164,10 @@ if __name__ == "__main__":
 
     load_dotenv()
 
-    initialize_firebase_service_account()
+    db = initialize_firebase_service_account()
 
-    ev_users = get_ev_users_from_db()
+    ev_users = get_ev_users_from_db(db)
 
     events = get_events_from_local_json()
 
-    post_events_to_db(ev_users, events, "2025-11-30")
+    post_events_to_db(db, ev_users, events, "2025-11-30")
