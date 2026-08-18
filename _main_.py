@@ -12,6 +12,7 @@ from dateutil.relativedelta import relativedelta
 import firebase_admin
 from firebase_admin import credentials, firestore
 import sys
+from pprint import pp
 
 def initialize_firebase_service_account() -> firestore.client:
 
@@ -118,6 +119,8 @@ def get_events_from_local_json() -> dict:
 
 def do_monthly_total(db, ev_users: dict, specific_date_to_run:date=None):
 
+    print("********\nStarting To Run Monthly Totals\n********")
+
     ## Figure out the exact start and end of the desired month
 
     if isinstance(specific_date_to_run, str):
@@ -128,10 +131,17 @@ def do_monthly_total(db, ev_users: dict, specific_date_to_run:date=None):
 
         specific_date_to_run = date.today() + relativedelta(days=-3)
 
+    pp("*******\ncalculated specific date: " + specific_date_to_run.isoformat() + "\n*******")
+
     start_of_month = datetime.combine(specific_date_to_run, time()).astimezone(dateutil.tz.gettz(os.environ.get("TZ")))
-    start_of_month = start_of_month + relativedelta(months=-1, day=1)
+    start_of_month = start_of_month + relativedelta(day=1)
 
     end_of_month = start_of_month + relativedelta(months=+1)
+
+    pp("*******")
+    pp("Start of month: " + start_of_month.isoformat())
+    pp("End of month: " + end_of_month.isoformat())
+    pp("*******")
 
     ## Get the relevant events
     
@@ -147,6 +157,9 @@ def do_monthly_total(db, ev_users: dict, specific_date_to_run:date=None):
 
     for doc in docs:
 
+        print("Found an event in the desired month:")
+        pp(doc.to_dict())
+
         the_months_events.append(Event.from_dict(doc.to_dict()))
 
     for k, v in ev_users.items():
@@ -157,7 +170,7 @@ def do_monthly_total(db, ev_users: dict, specific_date_to_run:date=None):
 
         if str(e.user_id) in ev_users:
 
-            new_wh = e.end_wh - e.start_wh
+            new_wh = int(e.end_wh) - int(e.start_wh)
 
             ev_users[str(e.user_id)].new_monthly_report.total_wh += new_wh
 
@@ -195,6 +208,8 @@ if __name__ == "__main__":
 
     ev_users = get_ev_users_from_db(db)
 
-    events = get_events_from_local_json()
+    ##events = get_events_from_local_json()
 
-    post_events_to_db(db, ev_users, events, "2025-11-30")
+    ##post_events_to_db(db, ev_users, events, "2025-11-30")
+
+    do_monthly_total(db, ev_users, "2025-12")
