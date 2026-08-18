@@ -2,33 +2,25 @@ from datetime import datetime
 
 class Ev_Charging_User:
 
-    unit: str
     user_id: int
-    name: str
     created: datetime
 
     def __init__(self, user_id, name, created, unit):
 
         self.user_id = user_id
-        self.name = name
         self.created = created
-        self.unit = unit
 
     @staticmethod
     def from_dict(source):
         return Ev_Charging_User(
             user_id=source["user_id"],
-            name=source.get("name", None),
-            created=source["created"],
-            unit=source.get("unit", None)
+            created=source["created"]
         )
 
     def to_dict(self):
         return {
             "user_id": self.user_id,
-            "name": self.name,
-            "created": self.created,
-            "unit": self.unit
+            "created": self.created
         }
 
     def generate_doc_key(self):

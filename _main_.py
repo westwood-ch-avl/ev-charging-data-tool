@@ -85,7 +85,7 @@ def post_events_to_db(db, ev_users: dict, events: list, earliest_date_time:datet
 
         else:
 
-            new_ev_user = Ev_Charging_User(int(event.user_id), None, datetime.now().astimezone(dateutil.tz.gettz(os.environ.get("TZ"))), None)
+            new_ev_user = Ev_Charging_User(int(event.user_id), datetime.now().astimezone(dateutil.tz.gettz(os.environ.get("TZ"))))
 
             ev_users[str(event.user_id)] = new_ev_user
 
