@@ -4,6 +4,7 @@ import json
 import requests
 from event import Event
 from ev_charging_user import Ev_Charging_User
+from monthly_total import Monthly_Total
 from event_error_checker import isValidEvent
 from datetime import datetime, date, time
 import dateutil
@@ -50,7 +51,7 @@ def get_ev_users_from_db(db) -> dict:
 
     ev_users = {}
 
-    docs = db.collection("ev-charging-users").stream()
+    docs = db.collection("ev_users").stream()
 
     for doc in docs:
         ev_users[doc.id] = Ev_Charging_User.from_dict(doc.to_dict())
@@ -146,13 +147,21 @@ def do_monthly_total(db, ev_users: dict, specific_date_to_run:date=None):
 
         the_months_events.append(Event.from_dict(doc.to_dict()))
 
-    #post the totals to respective users, using the list of the month's events and the ev_users dict
+    for k, v in ev_users.items():
 
-    #TODO I think I need to make a dict of new "monthly total" objects, one for each user, and then cycle through the events, adding to the totals. Then I need to post those objects.
+        ev_users[k].new_monthly_report = Monthly_Total(specific_date_to_run.year, specific_date_to_run.month, 0, 0, k)
 
     for e in the_months_events:
 
-        ... #TODO
+        if str(e.user_id) in ev_users:
+
+            new_wh = e.end_wh - e.start_wh
+
+            ev_users[str(e.user_id)].new_monthly_report.total_wh += new_wh
+
+            ev_users[str(e.user_id)].new_monthly_report.num_sessions +=1
+
+    ...#TODO post the new monthly totals. 
 
 def get_command_line_params() -> dict:
 
