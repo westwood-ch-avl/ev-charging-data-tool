@@ -5,7 +5,7 @@ class Ev_Charging_User:
     user_id: int
     created: datetime
 
-    def __init__(self, user_id, name, created, unit):
+    def __init__(self, user_id, created):
 
         self.user_id = user_id
         self.created = created

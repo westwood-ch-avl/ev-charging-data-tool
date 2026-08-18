@@ -212,4 +212,4 @@ if __name__ == "__main__":
 
     ##post_events_to_db(db, ev_users, events, "2025-11-30")
 
-    do_monthly_total(db, ev_users, "2025-12")
+    do_monthly_total(db, ev_users, "2026-02")

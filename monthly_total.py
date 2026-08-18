@@ -16,7 +16,7 @@ class Monthly_Total:
         self.user_id = user_id
 
     def generate_doc_key(self):
-        return str(self.year) + str(self.month)
+        return str(self.year) + str(self.month).zfill(2)
 
     def to_dict(self):
         return {
