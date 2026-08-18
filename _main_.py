@@ -5,8 +5,11 @@ import requests
 from event import Event
 from ev_charging_user import Ev_Charging_User
 from event_error_checker import isValidEvent
-from datetime import datetime
+from datetime import datetime, date, time
+import dateutil
+from dateutil.relativedelta import relativedelta
 import firebase_admin
+import sys
 
 load_dotenv()
 
@@ -31,14 +34,14 @@ def get_powerfill_data() -> list:
     else:
         raise Exception(f"Failed to fetch data from Powerfill: {response.status_code} - {response.text}")
 
-def build_event_list_from_powerfill_list(data) -> list:
+def build_event_dict_from_powerfill_list(data) -> dict:
 
-    events = []
+    events = {}
 
     for e in data:
 
         if isValidEvent(e):
-            events.append(Event(e["id"], e["startTimeStamp"], e["stopTimeStamp"], e["startValue"],e["stopValue"], e["userId"], e["chargeBoxId"]))
+            events[e["id"]] = (Event(e["id"], e["startTimeStamp"], e["stopTimeStamp"], e["startValue"],e["stopValue"], e["userId"], e["chargeBoxId"]))
 
     return events
 
@@ -56,14 +59,16 @@ def get_ev_users_from_db() -> dict:
 
     return ev_users
 
-def post_events_to_db(events: list, local_ev_user_dict, earliest_date_time:datetime=None): #TODO the following is auto generated. Prolly need to fix it. Do these need to be batched?
-# TODO DO I want to store events under each user? I think so.
-# TODO need to check against the `local_ev_user_dict` and make a new user in the database if one is missing. At the same time, that needs to be loaded in the local dict so I'm not doing the same thing over and over!
-# TODO see this for batching: https://docs.cloud.google.com/python/docs/reference/firestore/latest/google.cloud.firestore_v1.bulk_writer.BulkWriter
+def post_events_to_db(ev_users: dict, events: list, earliest_date_time:datetime=None):
 
     from firebase_admin import firestore
 
-    db = firestore.client()
+    db = firestore.Client()
+    bulk_writer = db.bulk_writer()
+
+    bulk_writer.on_write_result(lambda reference, result, bulk_writer: print(f'Saved {reference._document_path}'))
+
+    bulk_writer.on_write_error(lambda bulkwriterfailure, bulk_writer: print(f'Bulk Write Failure: {bulkwriterfailure.message}'))
 
     for event in events:
 
@@ -71,23 +76,89 @@ def post_events_to_db(events: list, local_ev_user_dict, earliest_date_time:datet
 
             if event.start_time < earliest_date_time:
                 break
-        
-        doc_ref = db.collection("events").document(event.id)
-        doc_ref.set(event.to_dict())
 
-'''create a data list of events from a local json file—path defined in the env variables. NB after running this, the list will still need to be converted to event objects.'''
-def get_data_from_local_json() -> list:
+        if event.user_id in ev_users:
+
+            continue
+
+        else:
+
+            new_ev_user = Ev_Charging_User(int(event.user_id), None, datetime.now().astimezone(dateutil.tz.gettz(os.environ.get("TZ"))), None)
+
+            ev_users[str(event.user_id)] = new_ev_user
+
+            ref = db.collection("ev_users").document(str(event.user_id))
+            bulk_writer.set(ref, new_ev_user.to_dict())
+
+        doc_ref = db.collection("ev_users").document(str(event.user_id)).collection("events").document(str(event.id))
+        bulk_writer.set(doc_ref, event.to_dict())
+
+    bulk_writer.close()
+
+def get_events_from_local_json() -> dict:
 
     path = os.environ.get("LOCAL_JSON_DATA")
 
     data = []
 
+    events = {}
+
     with open(path, 'r') as f:
 
         data = json.load(f)
 
-    return data
+    for e in data:
 
-def do_monthly_totals():
+        if isValidEvent(e):
 
-    ... #TODO
+            events[str(e["id"])] = Event(e["id"], e["startTimestamp"], e["stopTimestamp"], e["startValue"], e["stopValue"], e["userId"], e["chargeBoxId"])
+
+    return events
+
+def do_monthly_total(ev_users: dict, specific_date_to_run:date=None):
+
+    ## Figure out the exact start and end of the desired month
+
+    if specific_date_to_run == None:
+
+        specific_date_to_run = date.today() + relativedelta(days=-3)
+
+    start_of_month = datetime.combine(specific_date_to_run, time()).astimezone(dateutil.tz.gettz(os.environ.get("TZ")))
+    start_of_month = start_of_month + relativedelta(months=-1, day=1)
+
+    end_of_month = start_of_month + relativedelta(months=+1)
+
+    ## Get the relevant events
+    
+    from firebase_admin import firestore
+    from google.cloud.firestore_v1.base_query import FieldFilter
+    
+    db = firestore.client()
+
+    query = db.collection_group("events").where(filter=FieldFilter("start_time", ">", start_of_month)).where(filter=FieldFilter("start_time", "<", end_of_month))
+
+    docs = query.stream()
+
+    the_months_events = []
+
+    for doc in docs:
+
+        the_months_events.append(Event.from_dict(doc.to_dict()))
+
+    #post the totals to respective users, using the list of the month's events and the ev_users dict
+
+    #TODO I think I need to make a dict of new "monthly total" objects, one for each user, and then cycle through the events, adding to the totals. Then I need to post those objects.
+
+    for e in the_months_events:
+
+        ... #TODO
+
+def get_command_line_params() -> dict:
+
+    ... # https://realpython.com/command-line-interfaces-python-argparse/#setting-the-type-of-input-values
+
+    ... #TODO should probably pass in separate numbers for how many days to look back for events vs for monthly reports?
+
+if __name__ == "__main__":
+
+    ...
