@@ -4,6 +4,7 @@ import json
 import requests
 from event import Event
 from ev_charging_user import Ev_Charging_User
+from invite_token import Invite_Token
 from monthly_total import Monthly_Total
 from event_error_checker import isValidEvent
 from datetime import datetime, date, time
@@ -199,6 +200,48 @@ def get_command_line_params() -> dict:
     ... # https://realpython.com/command-line-interfaces-python-argparse/#setting-the-type-of-input-values
 
     ... #TODO should probably pass in separate numbers for how many days to look back for events vs for monthly reports?
+
+def generate_chart_tables(db, ev_users):
+
+    wh_table = []
+    sessions_table = []
+
+    ## Get a whole bunch of data (monthly totals)
+
+    query = db.collection_group("monthly_totals").order_by("year", direction=firestore.Query.DESCENDING).order_by("month", direction=firestore.Query.DESCENDING).limit(15)
+
+    docs = query.stream()
+
+    for k, v in ev_users.items():
+
+        wh_dict = {}
+        sessions_dict = {}
+
+        wh_dict["user_id"] = str(k)
+        sessions_dict["user_id"] = str(k)
+
+        for d in docs:
+
+            docs_dict = d.to_dict()
+
+            if docs_dict["user_id"] == str(k):
+
+                ...## process the data, starting with most recent month and trying keys for all 15 past months. #TODO
+        
+        wh_table.append(wh_dict)
+        sessions_table.append(sessions_dict)
+
+    ## make the `chart_data` object and add it to the db
+
+def generate_new_tokens(num:int=5) -> list:
+
+    new_tokens = []
+
+    while len(new_tokens) < num:
+
+        new_tokens.append(Invite_Token.generate_token())
+
+    return new_tokens
 
 if __name__ == "__main__":
 

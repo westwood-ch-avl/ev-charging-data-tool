@@ -1,29 +1,32 @@
+from datetime import datetime
+
 class Chart_Data:
 
-    month: int
-    year: int
+    date_created: datetime
     wh_table: list
     sessions_table: list
 
-    def __init__(self, month:int, year:int, wh_table:list, sessions_table:list):
-        pass
+    def __init__(self, date_created: datetime, wh_table:list, sessions_table:list):
+
+        self.date_created = date_created
+        self.wh_table = wh_table
+        self.sessions_table = sessions_table
 
     def generate_key(self) -> str:
 
-        return str(self.year) + str(self.month).zfill(2)
+        return "chart_data"
 
     def to_dict(self) -> dict:
 
         return {
-            "month": self.month,
-            "year": self.year,
+            "date_created": self.date_created,
             "wh_table": self.wh_table,
             "sessions_table": self.sessions_table
         }
 
     @staticmethod
     def from_dict(source):
-        return Chart_Data(source["month"], source["year"], source["wh_table"], source["sessions_table"])
+        return Chart_Data(source["date_created"], source["wh_table"], source["sessions_table"])
 
 '''The tables should be lists / dicts, sort of like the csv library uses? Column headers are keys...'''
 
